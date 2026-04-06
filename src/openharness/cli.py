@@ -7,6 +7,10 @@ import sys
 from pathlib import Path
 from typing import Optional
 
+from dotenv import load_dotenv
+
+load_dotenv()  # Load .env from current working directory
+
 import typer
 
 __version__ = "0.1.1"
