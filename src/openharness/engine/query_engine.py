@@ -7,7 +7,7 @@ from typing import AsyncIterator
 
 from openharness.api.client import SupportsStreamingMessages
 from openharness.engine.cost_tracker import CostTracker
-from openharness.engine.messages import ConversationMessage, ToolResultBlock
+from openharness.engine.messages import ConversationMessage, ContentBlock, TextBlock, ToolResultBlock
 from openharness.engine.query import AskUserPrompt, PermissionPrompt, QueryContext, run_query
 from openharness.engine.stream_events import StreamEvent
 from openharness.hooks import HookExecutor
@@ -108,9 +108,15 @@ class QueryEngine:
             return bool(msg.tool_uses)
         return False
 
-    async def submit_message(self, prompt: str) -> AsyncIterator[StreamEvent]:
+    async def submit_message(
+        self, prompt: str, *, extra_content: list[ContentBlock] | None = None
+    ) -> AsyncIterator[StreamEvent]:
         """Append a user message and execute the query loop."""
-        self._messages.append(ConversationMessage.from_user_text(prompt))
+        if extra_content:
+            blocks: list[ContentBlock] = [TextBlock(text=prompt), *extra_content]
+            self._messages.append(ConversationMessage(role="user", content=blocks))
+        else:
+            self._messages.append(ConversationMessage.from_user_text(prompt))
         context = QueryContext(
             api_client=self._api_client,
             tool_registry=self._tool_registry,

@@ -34,3 +34,7 @@ react_tui_smoke.txt
 .DS_Store
 Thumbs.db
 uv.lock
+
+.qoder
+frontend/web/node_modules/
+frontend/web/dist/

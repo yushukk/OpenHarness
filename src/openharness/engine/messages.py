@@ -15,6 +15,14 @@ class TextBlock(BaseModel):
     text: str
 
 
+class ImageBlock(BaseModel):
+    """Base64-encoded image content for multimodal messages."""
+
+    type: Literal["image"] = "image"
+    media_type: str  # "image/png", "image/jpeg", "image/gif", "image/webp"
+    data: str  # base64-encoded image data
+
+
 class ToolUseBlock(BaseModel):
     """A request from the model to execute a named tool."""
 
@@ -33,7 +41,9 @@ class ToolResultBlock(BaseModel):
     is_error: bool = False
 
 
-ContentBlock = Annotated[TextBlock | ToolUseBlock | ToolResultBlock, Field(discriminator="type")]
+ContentBlock = Annotated[
+    TextBlock | ImageBlock | ToolUseBlock | ToolResultBlock, Field(discriminator="type")
+]
 
 
 class ConversationMessage(BaseModel):
@@ -71,6 +81,16 @@ def serialize_content_block(block: ContentBlock) -> dict[str, Any]:
     """Convert a local content block into the provider wire format."""
     if isinstance(block, TextBlock):
         return {"type": "text", "text": block.text}
+
+    if isinstance(block, ImageBlock):
+        return {
+            "type": "image",
+            "source": {
+                "type": "base64",
+                "media_type": block.media_type,
+                "data": block.data,
+            },
+        }
 
     if isinstance(block, ToolUseBlock):
         return {

@@ -26,6 +26,7 @@ from openharness.api.usage import UsageSnapshot
 from openharness.engine.messages import (
     ConversationMessage,
     ContentBlock,
+    ImageBlock,
     TextBlock,
     ToolResultBlock,
     ToolUseBlock,
@@ -81,9 +82,10 @@ def _convert_messages_to_openai(
             openai_msg = _convert_assistant_message(msg)
             openai_messages.append(openai_msg)
         elif msg.role == "user":
-            # User messages may contain text or tool_result blocks
+            # User messages may contain text, image, or tool_result blocks
             tool_results = [b for b in msg.content if isinstance(b, ToolResultBlock)]
             text_blocks = [b for b in msg.content if isinstance(b, TextBlock)]
+            image_blocks = [b for b in msg.content if isinstance(b, ImageBlock)]
 
             if tool_results:
                 # Each tool result becomes a separate message with role="tool"
@@ -93,11 +95,26 @@ def _convert_messages_to_openai(
                         "tool_call_id": tr.tool_use_id,
                         "content": tr.content,
                     })
-            if text_blocks:
+            if image_blocks:
+                # Multimodal message: use content array format
+                parts: list[dict[str, Any]] = []
+                for b in text_blocks:
+                    if b.text.strip():
+                        parts.append({"type": "text", "text": b.text})
+                for b in image_blocks:
+                    parts.append({
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:{b.media_type};base64,{b.data}",
+                        },
+                    })
+                if parts:
+                    openai_messages.append({"role": "user", "content": parts})
+            elif text_blocks:
                 text = "".join(b.text for b in text_blocks)
                 if text.strip():
                     openai_messages.append({"role": "user", "content": text})
-            if not tool_results and not text_blocks:
+            if not tool_results and not text_blocks and not image_blocks:
                 # Empty user message (shouldn't happen, but handle gracefully)
                 openai_messages.append({"role": "user", "content": ""})
 

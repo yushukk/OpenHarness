@@ -39,12 +39,14 @@ plugin_app = typer.Typer(name="plugin", help="Manage plugins")
 auth_app = typer.Typer(name="auth", help="Manage authentication")
 provider_app = typer.Typer(name="provider", help="Manage provider profiles")
 cron_app = typer.Typer(name="cron", help="Manage cron scheduler and jobs")
+web_app = typer.Typer(name="web", help="Launch the browser-based web UI")
 
 app.add_typer(mcp_app)
 app.add_typer(plugin_app)
 app.add_typer(auth_app)
 app.add_typer(provider_app)
 app.add_typer(cron_app)
+app.add_typer(web_app)
 
 
 # ---- mcp subcommands ----
@@ -255,6 +257,43 @@ def cron_logs_cmd(
     tail = content.splitlines()[-lines:]
     for line in tail:
         print(line)
+
+
+# ---- web subcommands ----
+
+@web_app.callback(invoke_without_command=True)
+def web_main(
+    ctx: typer.Context,
+    port: int = typer.Option(8765, "--port", "-p", help="Server port"),
+    host: str = typer.Option("127.0.0.1", "--host", help="Server host (use 0.0.0.0 for network access)"),
+    model: str | None = typer.Option(None, "--model", "-m", help="Model alias or full model ID"),
+    max_turns: int | None = typer.Option(None, "--max-turns", help="Maximum agentic turns"),
+    base_url: str | None = typer.Option(None, "--base-url", help="API base URL"),
+    system_prompt: str | None = typer.Option(None, "--system-prompt", "-s", help="Override system prompt"),
+    api_key: str | None = typer.Option(None, "--api-key", "-k", help="API key"),
+    api_format: str | None = typer.Option(None, "--api-format", help="API format: anthropic, openai, or copilot"),
+    dev: bool = typer.Option(False, "--dev", help="Dev mode: only start WebSocket backend"),
+) -> None:
+    """Launch OpenHarness in a web browser."""
+    if ctx.invoked_subcommand is not None:
+        return
+
+    import asyncio
+    from openharness.ui.app import run_web
+
+    asyncio.run(
+        run_web(
+            port=port,
+            host=host,
+            model=model,
+            max_turns=max_turns,
+            base_url=base_url,
+            system_prompt=system_prompt,
+            api_key=api_key,
+            api_format=api_format,
+            dev_mode=dev,
+        )
+    )
 
 
 # ---- auth subcommands ----

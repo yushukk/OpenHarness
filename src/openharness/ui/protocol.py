@@ -12,6 +12,14 @@ from openharness.mcp.types import McpConnectionStatus
 from openharness.tasks.types import TaskRecord
 
 
+class AttachmentPayload(BaseModel):
+    """File attachment sent from the web frontend."""
+
+    filename: str
+    media_type: str  # "image/png", "image/jpeg", "text/markdown", etc.
+    data: str  # base64-encoded for images, raw text for md files
+
+
 class FrontendRequest(BaseModel):
     """One request sent from the React frontend to the Python backend."""
 
@@ -30,6 +38,7 @@ class FrontendRequest(BaseModel):
     request_id: str | None = None
     allowed: bool | None = None
     answer: str | None = None
+    attachments: list[AttachmentPayload] | None = None
 
 
 class TranscriptItem(BaseModel):
@@ -40,6 +49,7 @@ class TranscriptItem(BaseModel):
     tool_name: str | None = None
     tool_input: dict[str, Any] | None = None
     is_error: bool | None = None
+    images: list[dict[str, str]] | None = None
 
 
 class TaskSnapshot(BaseModel):
@@ -208,6 +218,7 @@ def _format_permission_mode(raw: str) -> str:
 
 
 __all__ = [
+    "AttachmentPayload",
     "BackendEvent",
     "FrontendRequest",
     "TaskSnapshot",

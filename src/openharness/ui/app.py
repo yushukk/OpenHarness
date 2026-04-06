@@ -175,3 +175,31 @@ async def run_print_mode(
             print(json.dumps(result))
     finally:
         await close_runtime(bundle)
+
+
+async def run_web(
+    *,
+    port: int = 8765,
+    host: str = "127.0.0.1",
+    model: str | None = None,
+    max_turns: int | None = None,
+    base_url: str | None = None,
+    system_prompt: str | None = None,
+    api_key: str | None = None,
+    api_format: str | None = None,
+    dev_mode: bool = False,
+) -> None:
+    """Run the OpenHarness web UI (browser-based)."""
+    from openharness.ui.web_launcher import launch_web_ui
+
+    await launch_web_ui(
+        port=port,
+        host=host,
+        model=model,
+        max_turns=max_turns,
+        base_url=base_url,
+        system_prompt=system_prompt,
+        api_key=api_key,
+        api_format=api_format,
+        dev_mode=dev_mode,
+    )

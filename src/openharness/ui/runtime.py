@@ -17,7 +17,7 @@ from openharness.commands import CommandContext, CommandResult, create_default_c
 from openharness.config import get_config_file_path, load_settings
 from openharness.config.settings import display_model_setting
 from openharness.engine import QueryEngine
-from openharness.engine.messages import ConversationMessage, ToolResultBlock, ToolUseBlock
+from openharness.engine.messages import ConversationMessage, ContentBlock, ToolResultBlock, ToolUseBlock
 from openharness.engine.query import MaxTurnsExceeded
 from openharness.engine.stream_events import StreamEvent
 from openharness.hooks import HookEvent, HookExecutionContext, HookExecutor, load_hook_registry
@@ -379,6 +379,7 @@ async def handle_line(
     print_system: SystemPrinter,
     render_event: StreamRenderer,
     clear_output: ClearHandler,
+    extra_content: list[ContentBlock] | None = None,
 ) -> bool:
     """Handle one submitted line for either headless or TUI rendering."""
     if not bundle.external_api_client:
@@ -440,7 +441,7 @@ async def handle_line(
     system_prompt = build_runtime_system_prompt(settings, cwd=bundle.cwd, latest_user_prompt=line)
     bundle.engine.set_system_prompt(system_prompt)
     try:
-        async for event in bundle.engine.submit_message(line):
+        async for event in bundle.engine.submit_message(line, extra_content=extra_content):
             await render_event(event)
     except MaxTurnsExceeded as exc:
         await print_system(f"Stopped after {exc.max_turns} turns (max_turns).")
